@@ -1,0 +1,2 @@
+# Exclude mypy cache folders
+.mypy_cache/
