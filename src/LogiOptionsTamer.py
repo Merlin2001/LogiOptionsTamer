@@ -21,43 +21,47 @@ SECONDS_BETWEEN_CHECKS: float = 60
 
 # Switch debug output on/off
 DEBUG_MODE: bool = False
+VERSION: str = "1.1"
 
 
 def main():
 
-    print("----- Running LogiOptionsTamer -----\n")
+    print(f"----- Running LogiOptionsTamer v{VERSION}-----\n")
     overrunCount: int = 0
 
     # Run indefinitely
     while True:
 
-        # Check if process with too high cpu usage is found
+        # Try to find our bad boy process
         # To-do: Define type for this variable (not possible at the moment,
         #        because typeshed doesn't contain psutil, yet)
-        offender = getOffendingProcess()
+        processToKeepTame = tryGetProcess()
 
-        if offender is not None:
-            overrunCount += 1
-            user_log(f"Process exceeding cpu usage the {overrunCount}. time")
-        else:
-            overrunCount = 0    # Reset counter
-            user_log("Process is tame :)")
-        
-        debug_log(f"overrunCount={overrunCount}")
+        # If process could be found
+        if processToKeepTame is not None:
+            # Check if it uses too much CPU
+            if processExceedsUsageLimit(processToKeepTame):
+                overrunCount += 1
+                user_log(f"Process exceeding cpu usage the {overrunCount}. time")
+            else:
+                overrunCount = 0    # Reset counter
+                user_log("Process is tame :)")
+            
+            debug_log(f"overrunCount={overrunCount}")
 
-        # If yes, kill process and restart it
-        if overrunCount > MAX_OVERRUN_COUNT:
-            restartProcess(offender)
-            overrunCount = 0    # Reset counter
+            # If process used too much CPU too many times, kill it and restart it
+            if overrunCount > MAX_OVERRUN_COUNT:
+                restartProcess(processToKeepTame)
+                overrunCount = 0    # Reset counter
 
-        # If no, just wait a minute :)
+        # If process was not found or it is tame, just wait a bit :)
         debug_log("\n.,--zzZZ\n")
         time.sleep(SECONDS_BETWEEN_CHECKS)
 
 
 # To-do: Define return type for this method (not possible at the moment, because
 #        typeshed doesn't contain psutil, yet)
-def getOffendingProcess():
+def tryGetProcess():
     # Try to find process by name
     try:
         debug_log(f"Trying to get process by name '{PROCESS_TO_KILL}'")
@@ -69,17 +73,21 @@ def getOffendingProcess():
         user_log(f"Process '{PROCESS_TO_KILL}' not found...")
         return None
 
+    return firstPossibleOffender
+
+
+def processExceedsUsageLimit(processToCheck) -> bool:
     # Note that psutil.cpu_percent reports the usage percent of the cpu core the
     # process is running on, so we have to divide it by the number of cores in 
     # the system to get a value that is similar to the Task Manager's
-    cpuUsage: float = firstPossibleOffender.cpu_percent(interval=0.1) / psutil.cpu_count()
+    cpuUsage: float = processToCheck.cpu_percent(interval=0.1) / psutil.cpu_count()
 
     if cpuUsage > CPU_USAGE_THRESHOLD_IN_PERCENT:
         debug_log(f"Process is behaving badly, using {cpuUsage}% CPU")
-        return firstPossibleOffender
+        return True
     else:
         debug_log(f"Process is tame, using {cpuUsage}% CPU")
-        return None
+        return False
 
 
 def restartProcess(processToRestart):
@@ -108,7 +116,7 @@ def debug_log(stringToLog: str):
         print(f"{datetime.datetime.now()}: {stringToLog}")
 
 def user_log(stringToLog: str):
-    print(f"{datetime.datetime.now()}: {stringToLog}")
+    print(f"{datetime.datetime.now():%Y-%m-%d %H:%M:%S} - {stringToLog}")
 
 
 # Standard boilerplate to call the main() function.
