@@ -24,4 +24,4 @@ Windows users **without a Python installation** can find a release package in th
 Unfortunately, LogiOptionsTamer doesn't start minimized, yet, so I recommend using a tool like [the amazing RBTray](https://github.com/benbuck/rbtray) to minimize it to the system tray.
 
 # Screenshot
-![Screenshot showing console with LogiOptionsTamer output](LogiOptionsTamer_v1.0.png)
+![Screenshot showing console with LogiOptionsTamer output](LogiOptionsTamer.png)

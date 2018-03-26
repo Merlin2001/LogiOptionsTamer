@@ -21,7 +21,7 @@ SECONDS_BETWEEN_CHECKS: float = 60
 
 # Switch debug output on/off
 DEBUG_MODE: bool = False
-VERSION: str = "1.1"
+VERSION: str = "1.0.1"
 
 
 def main():
